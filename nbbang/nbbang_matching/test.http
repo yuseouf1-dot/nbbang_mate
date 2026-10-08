@@ -1,0 +1,8 @@
+POST http://localhost:8082/api/matchings
+Content-Type: application/json
+
+{
+  "title": "¸¶¶óÅÁ °°ÀÌ µå½Ç ºĞ!",
+  "restaurantName": "ÅÁÈ­ÄôÇª",
+  "maxParticipants": 4
+}

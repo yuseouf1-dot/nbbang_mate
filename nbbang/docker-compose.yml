@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # [1] Database Server 컨테이너 (채점 기준: Database Server MSA Container 구현)
+  mysql-db:
+    image: mysql:8.0
+    container_name: nbbang-mysql
+    environment:
+      MYSQL_DATABASE: nbbang_db    # 생성할 데이터베이스 이름
+      MYSQL_ROOT_PASSWORD: root    # MySQL 루트 비밀번호 (기존 설정에 맞춰 변경 가능)
+    ports:
+      - "3307:3306"
+    # 한글(UTF-8) 깨짐 방지 설정
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql  # 컨테이너가 삭제되어도 데이터가 날아가지 않도록 볼륨 마운트
+
+  # [2] Web Server 컨테이너 (채점 기준: WebServer MSA Container 구현)
+  nbbang-backend:
+    image: djadda/nbbang-backend:latest
+    container_name: nbbang-server
+    ports:
+      - "8082:8082"                # 외부 접속 포트 8082를 컨테이너 내부 8082로 연결
+    environment:
+      # 🚀 핵심: localhost가 아니라 docker-compose의 DB 서비스 이름(mysql-db)으로 연결!
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/nbbang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - mysql-db                   # DB 컨테이너가 먼저 실행된 후 백엔드가 실행되도록 순서 보장
+
+  nbbang-frontend:
+    build: ./frontend    # frontend 폴더의 Dockerfile을 읽어서 빌드!
+    container_name: nbbang-frontend
+    ports:
+      - "3000:3000"      # 프론트엔드는 3000번 포트로 접속
+    depends_on:
+      - nbbang-backend
+
+
+volumes:
+  mysql_data: # DB 영속성을 위한 로컬 볼륨

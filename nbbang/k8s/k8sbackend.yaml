@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbbang-backend-deployment
+spec:
+  replicas: 2   # ✨ 보너스 포인트: 백엔드 서버를 똑같이 2개 복제해서 로드밸런싱함!
+  selector:
+    matchLabels:
+      app: nbbang-backend
+  template:
+    metadata:
+      labels:
+        app: nbbang-backend
+    spec:
+      containers:
+        - name: nbbang-backend
+          image: djadda/nbbang-backend:latest  # 도커 허브에서 바로 다운로드!
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-service:3306/nbbang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "root"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+          ports:
+            - containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nbbang-backend-service
+spec:
+  type: LoadBalancer   # ✨ 외부(웹 브라우저)에서 접속할 수 있게 포트를 열어줌
+  selector:
+    app: nbbang-backend
+  ports:
+    - port: 8082
+      targetPort: 8082
